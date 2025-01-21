@@ -1,0 +1,20 @@
+plugins {
+    id 'groovy'
+}
+
+group = 'org.example'
+version = '0.0-1'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("net.dv8tion:JDA:5.2.1")
+    implementation 'org.json:json:20231013'
+
+    implementation 'dev.langchain4j:langchain4j-open-ai:0.36.2'
+    implementation 'dev.langchain4j:langchain4j:0.36.2'
+    implementation 'dev.langchain4j:langchain4j-ollama:0.36.2'
+}
+
