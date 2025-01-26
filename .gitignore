@@ -43,3 +43,6 @@ bin/
 
 src/main/java/com/firstBot/DiscordTokens.java
 src/main/java/com/firstBot/Main.java
+
+src/main/java/com/firstBot/VIPList.java
+src/main/java/com/firstBot/BanList.java
