@@ -4,24 +4,31 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.events.session.ReadyEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+
+import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.OptionData;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
 public class InitializeCommands extends ListenerAdapter {
+    private final AdminCommands adminCommands = new AdminCommands();
+    private static final String deleteBotMessages = "deletebotmessages";
+    private static final String deleteAllMessages = "deleteallmessages";
+    private static final String inThisChannel = "inthischannel";
+    private static final String inGuild = "inguild";
+
     private static final String generatePokemonTeam = "generaterpokemonteam";
     private final PokemonCommands pokemonCommands = new PokemonCommands();
 
     private static final String startChat = "startchat";
     private static final String stopChat = "stopchat";
-
     private static final String startRandomMessages = "startrandommessages";
     private static final String stopRandomMessages = "stoprandommessages";
-
     private static final String startAutoModeration = "startautomoderation";
     private static final String stopAutoModeration = "stopautomoderation";
-
     private static final String clearMemory = "clearmemory";
 
     @Override
@@ -29,6 +36,18 @@ public class InitializeCommands extends ListenerAdapter {
         if(BanList.isUserBanned(event.getUser().getIdLong()) || BanList.isServerBanned(Objects.requireNonNull(event.getGuild()).getIdLong()))
             return;
         switch (event.getName()) {
+            case deleteBotMessages -> {
+                if(event.getName().equals(inThisChannel))
+                    adminCommands.deleteAllBotsMessagesInThisChannel(event);
+                else
+                    adminCommands.deleteAllBotsMessageInThisGuild(event);
+            }
+            case deleteAllMessages -> {
+                if(event.getName().equals(inThisChannel))
+                    adminCommands.deleteAllMessagesInThisChannel(event);
+                else
+                    adminCommands.deleteAllMessagesInThisGuild(event);
+            }
             case generatePokemonTeam -> pokemonCommands.generateTeam(event);
             case startChat -> AiCommands.startChat(event);
             case stopChat -> AiCommands.stopChat(event);
@@ -51,6 +70,9 @@ public class InitializeCommands extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         event.getJDA().updateCommands().addCommands(
+                getDeleteBotMessages(),
+                getDeleteAllMessages(),
+
                 Commands.slash(generatePokemonTeam, "Generate Random Pokemon Teams"),
 
                 Commands.slash(startChat, "Enable the bot to initiate AI chat (enabled by default)"),
@@ -64,5 +86,24 @@ public class InitializeCommands extends ListenerAdapter {
 
                 Commands.slash(clearMemory, "Clear your conversation memory")
         ).queue();
+    }
+
+
+    public static SlashCommandData getDeleteBotMessages() {
+        return Commands.slash(deleteBotMessages, "Deletes messages")
+                .addOptions(
+                        new OptionData(OptionType.STRING, deleteBotMessages, "Delete this bot's messages", true)
+                                .addChoice("In this channel", inThisChannel)
+                                .addChoice("In the entire server", inGuild)
+                );
+    }
+
+    public static SlashCommandData getDeleteAllMessages() {
+        return Commands.slash(deleteAllMessages, "Deletes messages")
+                .addOptions(
+                        new OptionData(OptionType.STRING, deleteAllMessages, "Delete all messages", true)
+                                .addChoice("In this channel", inThisChannel)
+                                .addChoice("In the entire server", inGuild)
+                );
     }
 }
