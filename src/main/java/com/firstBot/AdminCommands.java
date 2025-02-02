@@ -5,9 +5,12 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static java.lang.Thread.sleep;
 
 public class AdminCommands {
     public void deleteAllBotsMessagesInThisChannel(SlashCommandInteractionEvent event) {
@@ -53,19 +56,22 @@ public class AdminCommands {
     }
 
     private void deleteBotMessages(SlashCommandInteractionEvent event, TextChannel channel) {
-        if(checkAdmin(event)) {
+        if (checkAdmin(event)) {
             channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
-                List<Message> userMessages = messages.stream()
+                List<Message> message = messages.stream()
                         .filter(msg -> msg.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
-                        .collect(Collectors.toList());
-                if (!userMessages.isEmpty()) {
-                    if (userMessages.size() > 1) {
-                        channel.deleteMessages(userMessages).queue();
-                    } else {
-                        userMessages.getFirst().delete().queue();
-                    }
-                    // Recursively delete more messages
-                    deleteBotMessages(event, channel);
+                        .toList();
+
+                if (!message.isEmpty()) {
+                    List<Message> bulkDeletable = message.stream()
+                            .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
+                            .collect(Collectors.toList());
+
+                    List<Message> olderMessages = message.stream()
+                            .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
+                            .toList();
+
+                    deleteHandler(channel, bulkDeletable, olderMessages);
                 }
             });
         }
@@ -74,17 +80,38 @@ public class AdminCommands {
     private void deleteAllMessages(SlashCommandInteractionEvent event, TextChannel channel) {
         if (checkAdmin(event)) {
             channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
-                if (!messages.isEmpty()) {
-                    if (messages.size() > 1) {
-                        // Bulk delete for messages within the last 2 weeks
-                        channel.deleteMessages(messages).queue();
-                    } else {
-                        // Delete individually if only one message
-                        messages.getFirst().delete().queue();
-                    }
-                    deleteAllMessages(event, channel);
+                List<Message> message = messages.stream().toList();
+
+                if (!message.isEmpty()) {
+                    List<Message> bulkDeletable = message.stream()
+                            .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
+                            .toList();
+
+                    List<Message> olderMessages = message.stream()
+                            .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
+                            .toList();
+
+                    deleteHandler(channel, bulkDeletable, olderMessages);
                 }
             });
+        }
+    }
+
+    private void deleteHandler(TextChannel channel, List<Message> bulkDeletable, List<Message> olderMessages) {
+        // Bulk delete recent messages
+        if (!bulkDeletable.isEmpty()) {
+            channel.deleteMessages(bulkDeletable).queue();
+            System.out.println(bulkDeletable);
+        }
+
+        // Slowly delete older messages (one by one)
+        for (Message curMessage : olderMessages) {
+            try {
+                curMessage.delete().queue();
+                sleep(1500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
