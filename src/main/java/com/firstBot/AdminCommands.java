@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class AdminCommands {
     public void deleteAllBotsMessagesInThisChannel(SlashCommandInteractionEvent event) {
@@ -53,30 +54,37 @@ public class AdminCommands {
 
     private void deleteBotMessages(SlashCommandInteractionEvent event, TextChannel channel) {
         if(checkAdmin(event)) {
-            while (true) {
-                List<Message> botMessages = channel.getHistory()
-                        .retrievePast(10)
-                        .complete()
-                        .stream()
-                        .filter(message -> message.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
-                        .toList();
-                if (botMessages.isEmpty())
-                    break;
-                channel.purgeMessages(botMessages);
-            }
+            channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
+                List<Message> userMessages = messages.stream()
+                        .filter(msg -> msg.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
+                        .collect(Collectors.toList());
+                if (!userMessages.isEmpty()) {
+                    if (userMessages.size() > 1) {
+                        channel.deleteMessages(userMessages).queue();
+                    } else {
+                        userMessages.getFirst().delete().queue();
+                    }
+                    // Recursively delete more messages
+                    deleteBotMessages(event, channel);
+                }
+            });
         }
     }
 
     private void deleteAllMessages(SlashCommandInteractionEvent event, TextChannel channel) {
         if (checkAdmin(event)) {
-            while (true) {
-                List<Message> messages = channel.getHistory()
-                        .retrievePast(10)
-                        .complete();
-                if (messages.isEmpty())
-                    break;
-                channel.purgeMessages(messages);
-            }
+            channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
+                if (!messages.isEmpty()) {
+                    if (messages.size() > 1) {
+                        // Bulk delete for messages within the last 2 weeks
+                        channel.deleteMessages(messages).queue();
+                    } else {
+                        // Delete individually if only one message
+                        messages.getFirst().delete().queue();
+                    }
+                    deleteAllMessages(event, channel);
+                }
+            });
         }
     }
 }
