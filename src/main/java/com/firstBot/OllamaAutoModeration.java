@@ -11,7 +11,7 @@ public class OllamaAutoModeration extends ListenerAdapter {
             return;
         if(event.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
             return;
-        if(!OllamaState.isAutoModerationActive())
+        if(ServerStateManager.getOllamaState(IDGetterHelper.getGuildIDLongFromMessageReceivedEvent(event)).isAutoModerationActive())
             return;
 
         OllamaReader ollamaReader = new OllamaReader(0.8, 50);

@@ -16,12 +16,10 @@ public class ReplyEvents extends ListenerAdapter {
         long selfID = event.getJDA().getSelfUser().getIdLong();
         long serverID = event.getGuild().getIdLong();
 
-        if(!OllamaState.isChatActive())
+        if(!ServerStateManager.getOllamaState(IDGetterHelper.getGuildIDLongFromMessageReceivedEvent(event)).isChatActive())
             return;
         if (BanList.isUserBanned(userID) || BanList.isServerBanned(serverID))
             return;
-//        if(event.getAuthor().isBot())
-//            return;
 
         Message referencedMessage = event.getMessage().getReferencedMessage();
         String botMention = event.getGuild().getSelfMember().getAsMention();

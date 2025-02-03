@@ -16,15 +16,13 @@ public class RandomOllamaChat extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         JDA jda = event.getJDA();
-        if(OllamaState.isRandomChatActive())
             for(Guild guild : jda.getGuilds()) {
-                startReadingMessages(guild, 5, jda, 300000); // Runs every 5 minutes (300,000 ms)
+                if(ServerStateManager.getOllamaState(guild.getIdLong()).isRandomChatActive())
+                    startReadingMessages(guild, 5, jda, 300000); // Runs every 5 minutes (300,000 ms)
             }
     }
 
     public void startReadingMessages(Guild guild, int numberOfLines, JDA jda, int milliSecond) {
-        if(!OllamaState.isRandomChatActive())
-            return;
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
@@ -35,8 +33,6 @@ public class RandomOllamaChat extends ListenerAdapter {
     }
 
     public void startReadingMessages(Guild guild, TextChannel channel, int numberOfLines, JDA jda, int milliSecond) {
-        if(!OllamaState.isRandomChatActive())
-            return;
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override

@@ -19,6 +19,7 @@ public class InitializeCommands extends ListenerAdapter {
     private static final String deleteAllMessages = "deleteallmessages";
     private static final String inThisChannel = "inthischannel";
     private static final String inGuild = "inguild";
+    private static final String deleteStop = "deletestop";
 
     private static final String generatePokemonTeam = "generaterpokemonteam";
     private final PokemonCommands pokemonCommands = new PokemonCommands();
@@ -48,6 +49,7 @@ public class InitializeCommands extends ListenerAdapter {
                 else
                     adminCommands.deleteAllMessagesInThisGuild(event);
             }
+            case deleteStop -> adminCommands.stopDelete(event);
             case generatePokemonTeam -> pokemonCommands.generateTeam(event);
             case startChat -> AiCommands.startChat(event);
             case stopChat -> AiCommands.stopChat(event);
@@ -72,6 +74,7 @@ public class InitializeCommands extends ListenerAdapter {
         event.getJDA().updateCommands().addCommands(
                 getDeleteBotMessages(),
                 getDeleteAllMessages(),
+                Commands.slash(deleteStop, "Stop the bot from deleting messages"),
 
                 Commands.slash(generatePokemonTeam, "Generate Random Pokemon Teams"),
 
@@ -90,7 +93,7 @@ public class InitializeCommands extends ListenerAdapter {
 
 
     public static SlashCommandData getDeleteBotMessages() {
-        return Commands.slash(deleteBotMessages, "Deletes messages")
+        return Commands.slash(deleteBotMessages, "Deletes all bot messages in this channel or in the entire server, can be stopped with /deletestop")
                 .addOptions(
                         new OptionData(OptionType.STRING, deleteBotMessages, "Delete this bot's messages", true)
                                 .addChoice("In this channel", inThisChannel)
@@ -99,7 +102,7 @@ public class InitializeCommands extends ListenerAdapter {
     }
 
     public static SlashCommandData getDeleteAllMessages() {
-        return Commands.slash(deleteAllMessages, "Deletes messages")
+        return Commands.slash(deleteAllMessages, "Deletes all messages in this channel or in the entire server, can be stopped with /deletestop")
                 .addOptions(
                         new OptionData(OptionType.STRING, deleteAllMessages, "Delete all messages", true)
                                 .addChoice("In this channel", inThisChannel)

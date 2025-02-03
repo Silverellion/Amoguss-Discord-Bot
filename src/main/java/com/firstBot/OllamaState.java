@@ -1,29 +1,34 @@
 package com.firstBot;
 
 public class OllamaState {
-    public static boolean chat = true;
-    public static boolean randomChat = false;
-    public static boolean autoModeration = false;
+    public boolean chat;
+    public boolean randomChat;
+    public boolean autoModeration;
 
-    public static void setChatActive(boolean active) {
+    public OllamaState(boolean llamaChat, boolean randomLlamaChat, boolean autoModeration) {
+        setChatActive(llamaChat);
+        setRandomChatActive(randomLlamaChat);
+        setAutoModerationActive(autoModeration);
+    }
+
+    public void setChatActive(boolean active) {
         chat = active;
     }
-    public static boolean isChatActive() {
+    public boolean isChatActive() {
         return chat;
     }
 
-    public static void setRandomChatActive(boolean active) {
+    public void setRandomChatActive(boolean active) {
         randomChat = active;
     }
-    public static boolean isRandomChatActive() {
+    public boolean isRandomChatActive() {
         return randomChat;
     }
 
-    public static void setAutoModerationActive(boolean active) {
+    public void setAutoModerationActive(boolean active) {
         autoModeration = active;
     }
-    public static boolean isAutoModerationActive() {
+    public boolean isAutoModerationActive() {
         return autoModeration;
     }
-
 }

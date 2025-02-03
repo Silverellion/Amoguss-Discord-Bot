@@ -14,90 +14,81 @@ import static java.lang.Thread.sleep;
 
 public class AdminCommands {
     public void deleteAllBotsMessagesInThisChannel(SlashCommandInteractionEvent event) {
-        event.deferReply(true).queue();
-        deleteBotMessages(event, event.getChannel().asTextChannel());
+        if (checkAdmin(event)) {
+            event.deferReply(true).queue();
+            deleteBotMessages(event, event.getChannel().asTextChannel());
+        }
     }
     public void deleteAllBotsMessageInThisGuild(SlashCommandInteractionEvent event) {
-        event.deferReply(true).queue();
+        if (checkAdmin(event)) {
+            event.deferReply(true).queue();
             for (TextChannel channel : Objects.requireNonNull(event.getGuild()).getTextChannels()) {
                 deleteBotMessages(event, channel);
             }
+        }
     }
 
     public void deleteAllMessagesInThisChannel(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
-        if(checkInternalPermission(event, event.getChannel().asTextChannel()))
+        if(checkInternalPermission(event.getChannel().asTextChannel()))
             deleteAllMessages(event, event.getChannel().asTextChannel());
     }
     public void deleteAllMessagesInThisGuild(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
         for (TextChannel channel : Objects.requireNonNull(event.getGuild()).getTextChannels()) {
-            if(checkInternalPermission(event, channel))
+            if(checkInternalPermission(channel))
                 deleteAllMessages(event, channel);
         }
     }
 
     private boolean checkAdmin(SlashCommandInteractionEvent event) {
-        if (Objects.requireNonNull(event.getMember()).hasPermission(Permission.MESSAGE_MANAGE)) {
-            return true;
-        } else {
-            event.reply("You don't have permission to use this command, you idiot").setEphemeral(true).queue();
-            return false;
-        }
+        return Objects.requireNonNull(event.getMember()).hasPermission(Permission.MESSAGE_MANAGE);
     }
 
-    private boolean checkInternalPermission(SlashCommandInteractionEvent event, TextChannel channel) {
-        if(channel.getGuild().getSelfMember().hasPermission(channel, Permission.MESSAGE_MANAGE)) {
-            return true;
-        } else {
-            event.reply("I don't have permission in this channel: " + channel.getName()).setEphemeral(true).queue();
-            return false;
-        }
+    private boolean checkInternalPermission(TextChannel channel) {
+        return channel.getGuild().getSelfMember().hasPermission(channel, Permission.MESSAGE_MANAGE);
     }
 
     private void deleteBotMessages(SlashCommandInteractionEvent event, TextChannel channel) {
-        if (checkAdmin(event)) {
-            channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
-                List<Message> message = messages.stream()
-                        .filter(msg -> msg.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
+        channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
+            List<Message> message = messages.stream()
+                    .filter(msg -> msg.getAuthor().getIdLong() == event.getJDA().getSelfUser().getIdLong())
+                    .toList();
+
+            if (!message.isEmpty()) {
+                List<Message> bulkDeletable = message.stream()
+                        .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
+                        .collect(Collectors.toList());
+
+                List<Message> olderMessages = message.stream()
+                        .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
                         .toList();
 
-                if (!message.isEmpty()) {
-                    List<Message> bulkDeletable = message.stream()
-                            .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
-                            .collect(Collectors.toList());
-
-                    List<Message> olderMessages = message.stream()
-                            .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
-                            .toList();
-
-                    deleteHandler(channel, bulkDeletable, olderMessages);
-                }
-            });
-        }
+                deleteHandler(event, channel, bulkDeletable, olderMessages);
+            }
+        });
     }
 
     private void deleteAllMessages(SlashCommandInteractionEvent event, TextChannel channel) {
-        if (checkAdmin(event)) {
-            channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
-                List<Message> message = messages.stream().toList();
+        channel.getIterableHistory().takeAsync(100).thenAccept(messages -> {
+            List<Message> message = messages.stream().toList();
 
-                if (!message.isEmpty()) {
-                    List<Message> bulkDeletable = message.stream()
-                            .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
-                            .toList();
+            if (!message.isEmpty()) {
+                List<Message> bulkDeletable = message.stream()
+                        .filter(msg -> msg.getTimeCreated().isAfter(OffsetDateTime.now().minusWeeks(2)))
+                        .toList();
 
-                    List<Message> olderMessages = message.stream()
-                            .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
-                            .toList();
+                List<Message> olderMessages = message.stream()
+                        .filter(msg -> msg.getTimeCreated().isBefore(OffsetDateTime.now().minusWeeks(2)))
+                        .toList();
 
-                    deleteHandler(channel, bulkDeletable, olderMessages);
-                }
-            });
-        }
+                deleteHandler(event, channel, bulkDeletable, olderMessages);
+            }
+        });
     }
 
-    private void deleteHandler(TextChannel channel, List<Message> bulkDeletable, List<Message> olderMessages) {
+    private void deleteHandler(SlashCommandInteractionEvent event, TextChannel channel, List<Message> bulkDeletable, List<Message> olderMessages) {
+        ServerStateManager.setStopDeletion(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event), false);
         // Bulk delete recent messages
         if (!bulkDeletable.isEmpty()) {
             channel.deleteMessages(bulkDeletable).queue();
@@ -106,12 +97,19 @@ public class AdminCommands {
 
         // Slowly delete older messages (one by one)
         for (Message curMessage : olderMessages) {
+            if(ServerStateManager.getAdminState(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event)).getStopDeletion())
+                break;
             try {
                 curMessage.delete().queue();
-                sleep(1500);
+                sleep(2500);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
+    }
+
+    public void stopDelete(SlashCommandInteractionEvent event) {
+        ServerStateManager.setStopDeletion(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event), true);
+        event.reply("Message deletion has been stopped!").setEphemeral(true).queue();
     }
 }

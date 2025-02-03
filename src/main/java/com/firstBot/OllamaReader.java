@@ -93,9 +93,7 @@ public class OllamaReader {
 
     public String getResponse(long UID, String content) {
         String chat = "";
-        if(OllamaState.isChatActive()) {
-            chat = assistant.chat(UID, content);
-        }
+        chat = assistant.chat(UID, content);
         return chat;
     }
 
