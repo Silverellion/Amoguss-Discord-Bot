@@ -17,6 +17,7 @@ public class AdminCommands {
         if (checkAdmin(event)) {
             event.deferReply(true).queue();
             deleteBotMessages(event, event.getChannel().asTextChannel());
+            event.getHook().editOriginal("My messages have been removed :(").queue();
         }
     }
     public void deleteAllBotsMessageInThisGuild(SlashCommandInteractionEvent event) {
@@ -25,19 +26,24 @@ public class AdminCommands {
             for (TextChannel channel : Objects.requireNonNull(event.getGuild()).getTextChannels()) {
                 deleteBotMessages(event, channel);
             }
+            event.getHook().editOriginal("My messages have been removed :(").queue();
         }
     }
 
     public void deleteAllMessagesInThisChannel(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
-        if(checkInternalPermission(event.getChannel().asTextChannel()))
+        if(checkInternalPermission(event.getChannel().asTextChannel())) {
             deleteAllMessages(event, event.getChannel().asTextChannel());
+            event.getHook().editOriginal("Everything has been removed").queue();
+        }
     }
     public void deleteAllMessagesInThisGuild(SlashCommandInteractionEvent event) {
         event.deferReply(true).queue();
         for (TextChannel channel : Objects.requireNonNull(event.getGuild()).getTextChannels()) {
-            if(checkInternalPermission(channel))
+            if(checkInternalPermission(channel)) {
                 deleteAllMessages(event, channel);
+                event.getHook().editOriginal("Everything has been deleted").queue();
+            }
         }
     }
 
@@ -97,8 +103,9 @@ public class AdminCommands {
 
         // Slowly delete older messages (one by one)
         for (Message curMessage : olderMessages) {
-            if(ServerStateManager.getAdminState(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event)).getStopDeletion())
+            if(ServerStateManager.getAdminState(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event)).getStopDeletion()) {
                 break;
+            }
             try {
                 curMessage.delete().queue();
                 sleep(2500);
@@ -109,7 +116,10 @@ public class AdminCommands {
     }
 
     public void stopDelete(SlashCommandInteractionEvent event) {
+        if(ServerStateManager.getAdminState(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event)).getStopDeletion()) {
+            return;
+        }
         ServerStateManager.setStopDeletion(IDGetterHelper.getGuildIDLongFromSlashCommandInteractionEvent(event), true);
-        event.reply("Message deletion has been stopped!").setEphemeral(true).queue();
+        event.getHook().editOriginal("Message deletion has been stopped!").queue();
     }
 }

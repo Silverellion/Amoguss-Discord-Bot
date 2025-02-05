@@ -23,7 +23,7 @@ public class OllamaReader {
     private final PersistentChatMemoryStore store;
     private final ChatMemoryProvider chatMemoryProvider;
     private final ChatLanguageModel model;
-    private final String currentModelName = "llama3";
+    private final String currentModelName = "gemma2";
 
     private interface Assistant {
         String chat(@MemoryId long memoryId, @UserMessage String userMessage); //@UserMessage UserMessage userMessage is too slow.
@@ -41,7 +41,7 @@ public class OllamaReader {
                 .baseUrl("http://localhost:11434/")
                 .modelName(currentModelName)
                 .temperature(2.0)
-                .numPredict(100) //maxToken == max characters that the bot will send in a message
+                .numPredict(4096) //maxToken == max characters that the bot will send in a message
                 .build();
 
         assistant = AiServices.builder(Assistant.class)
@@ -92,9 +92,7 @@ public class OllamaReader {
     }
 
     public String getResponse(long UID, String content) {
-        String chat = "";
-        chat = assistant.chat(UID, content);
-        return chat;
+        return assistant.chat(UID, content);
     }
 
     public void clearMemory(long UID) {

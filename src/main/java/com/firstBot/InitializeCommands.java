@@ -38,13 +38,13 @@ public class InitializeCommands extends ListenerAdapter {
             return;
         switch (event.getName()) {
             case deleteBotMessages -> {
-                if(event.getName().equals(inThisChannel))
+                if(Objects.requireNonNull(event.getOption(deleteAllMessages)).getAsString().equals(inThisChannel))
                     adminCommands.deleteAllBotsMessagesInThisChannel(event);
                 else
                     adminCommands.deleteAllBotsMessageInThisGuild(event);
             }
             case deleteAllMessages -> {
-                if(event.getName().equals(inThisChannel))
+                if(Objects.requireNonNull(event.getOption(deleteAllMessages)).getAsString().equals(inThisChannel))
                     adminCommands.deleteAllMessagesInThisChannel(event);
                 else
                     adminCommands.deleteAllMessagesInThisGuild(event);

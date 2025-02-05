@@ -41,8 +41,8 @@ bin/
 ### Mac OS ###
 .DS_Store
 
+src/main/java/com/firstBot/BanList.java
 src/main/java/com/firstBot/DiscordTokens.java
 src/main/java/com/firstBot/Main.java
-
+src/main/java/com/firstBot/RandomAuthorizedOllamaChat.java
 src/main/java/com/firstBot/VIPList.java
-src/main/java/com/firstBot/BanList.java

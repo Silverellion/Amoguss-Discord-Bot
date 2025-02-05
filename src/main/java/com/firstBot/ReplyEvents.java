@@ -2,9 +2,11 @@ package com.firstBot;
 
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ReplyEvents extends ListenerAdapter {
@@ -52,11 +54,30 @@ public class ReplyEvents extends ListenerAdapter {
                     outcomeMessage.append(" ").append(user.getAsMention());
                 }
             }
-            event.getMessage().reply(outcomeMessage.toString()).queue();
+            sendLongMessage(event.getChannel().asTextChannel(), String.valueOf(outcomeMessage));
         }
     }
 
     private String ollamaRespond(long UID, String content) {
         return ollamaReader.getResponse(UID, content);
+    }
+
+    public void sendLongMessage(TextChannel channel, String message) {
+        int maxLength = 500;
+        List<String> messageParts = new ArrayList<>();
+
+        for (int i = 0; i < message.length(); i += maxLength) {
+            messageParts.add(message.substring(i, Math.min(i + maxLength, message.length())));
+        }
+
+        sendMessageQueue(channel, messageParts);
+    }
+
+    private void sendMessageQueue(TextChannel channel, List<String> messages) {
+        if (messages.isEmpty()) return;
+
+        channel.sendMessage(messages.getFirst()).queue(success -> {
+            sendMessageQueue(channel, messages.subList(1, messages.size()));
+        });
     }
 }
