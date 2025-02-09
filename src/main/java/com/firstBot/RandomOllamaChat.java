@@ -32,12 +32,12 @@ public class RandomOllamaChat extends ListenerAdapter {
         }, 0, milliSecond);
     }
 
-    public void startReadingMessages(Guild guild, TextChannel channel, int numberOfLines, JDA jda, int milliSecond) {
+    public void startReadingAuthorizedMessages(TextChannel channel, int numberOfLines, JDA jda, int milliSecond) {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                startSettings(guild, channel, numberOfLines, jda);
+                readRandomMessagesThenPing(channel, numberOfLines, jda);
             }
         }, 0, milliSecond);
     }
@@ -49,13 +49,6 @@ public class RandomOllamaChat extends ListenerAdapter {
                 Objects.requireNonNull(randomChannel.getPermissionOverride(guild.getPublicRole())).getAllowed().contains(Permission.VIEW_CHANNEL)) &&
                 randomChannel.canTalk())
             readRandomMessages(randomChannel, numberOfLines, jda);
-    }
-
-    private void startSettings(Guild guild, TextChannel channel, int numberOfLines, JDA jda) {
-        if ((channel.getPermissionOverride(guild.getPublicRole()) == null ||
-                Objects.requireNonNull(channel.getPermissionOverride(guild.getPublicRole())).getAllowed().contains(Permission.VIEW_CHANNEL)) &&
-                channel.canTalk())
-            readRandomMessages(channel, numberOfLines, jda);
     }
 
     private void readRandomMessages(TextChannel channel, int numberOfLines, JDA jda) {
@@ -80,5 +73,33 @@ public class RandomOllamaChat extends ListenerAdapter {
             return;
         OllamaReader ollamaReader = new OllamaReader();
         channel.sendMessage(ollamaReader.getResponse(channel.getIdLong(), tempString.toString())).queue();
+    }
+
+    private void readRandomMessagesThenPing(TextChannel channel, int numberOfLines, JDA jda) {
+        List<Message> messages = new ArrayList<>();
+
+        MessagePaginationAction history = channel.getIterableHistory();
+        int fetched = 0;
+        for (Message message : history) {
+            messages.add(message);
+            if (++fetched >= numberOfLines)
+                break;
+        }
+
+        StringBuilder tempString = new StringBuilder();
+        for(Message currentMessage : messages) {
+            if(currentMessage.getAuthor().getIdLong() != jda.getSelfUser().getIdLong()) {
+                tempString.append(currentMessage.getContentRaw());
+                tempString.append("\n");
+            }
+        }
+
+        if(tempString.isEmpty())
+            return;
+
+        OllamaReader ollamaReader = new OllamaReader();
+        channel.sendMessage(ollamaReader.getResponse(channel.getIdLong(), tempString.toString())
+                + " "
+                + messages.get(new Random().nextInt(messages.size())).getAuthor().getAsMention()).queue();
     }
 }

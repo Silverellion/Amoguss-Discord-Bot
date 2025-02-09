@@ -9,10 +9,6 @@ public class RandomAuthorizedOllamaChat extends ListenerAdapter {
     @Override
     public void onReady(ReadyEvent event) {
         JDA jda = event.getJDA();
-        authorizedChat.startReadingMessages(
-                jda.getGuildById(DiscordTokens.secretGuild),
-                jda.getTextChannelById(DiscordTokens.secretChannel),
-                2, jda, 60000
-        );
+        authorizedChat.startReadingAuthorizedMessages(jda.getTextChannelById(DiscordTokens.secretChannel), 5, jda, 30000);
     }
 }
