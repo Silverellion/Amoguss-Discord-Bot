@@ -23,7 +23,7 @@ public class OllamaReader {
     private final PersistentChatMemoryStore store;
     private final ChatMemoryProvider chatMemoryProvider;
     private final ChatLanguageModel model;
-    private final String currentModelName = "gemma2";
+    private final String currentModelName = "gemma3";
 
     private interface Assistant {
         String chat(@MemoryId long memoryId, @UserMessage String userMessage); //@UserMessage UserMessage userMessage is too slow.

@@ -30,7 +30,16 @@ public class PrintGuildPastMessages extends ListenerAdapter {
         }
         List<Message> messages = fetchAllMessages(channel, 100);
         messages.forEach(message -> {
-            System.out.println(channel.getName() + ": " + message.getAuthor().getName() + ": " + message.getContentDisplay());
+            System.out.println(
+                    channel.getName()
+                    + ": "
+                    + message.getAuthor().getName()
+                    + ": "
+                    + message.getContentDisplay()
+//                    + " ("
+//                    + message.getTimeCreated().toLocalTime().toString()
+//                    + ")"
+            );
         });
     }
 
